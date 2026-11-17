@@ -18,6 +18,9 @@ A prototype social-media feed that replaces binary "AI-generated" tags with **gr
 # any static server, e.g.
 python3 -m http.server 8000
 # then open http://localhost:8000
+
+# check the explanation validator (Node 18+, no dependencies)
+node tests/validate.test.mjs
 ```
 
 ## Development record
@@ -33,6 +36,12 @@ python3 -m http.server 8000
 - **"What we don't know" is always shown.** It says that provenance describes the image, not the caption, so "camera original" is not read as "the claim is true". It also flags unverified signers.
 - **Offline (mock) explainer first.** It runs without an API key and becomes the fallback when the LLM explainer is added.
 - *Checked:* ran `mockExplain` on all 7 posts with Node. A script confirmed that every value in each output comes from the record or from fixed template text. Served the site and clicked every label in headless Chromium: each panel toggles, `aria-expanded` updates, and there were no console errors.
+
+### Stage 3: checking AI output (17 Nov 2026)
+- **The LLM proposes and the code checks before anything is shown.** `validateExplanation` (`js/schema.js`) checks the structure: required keys only, length limits, and `source` set to `mock` or `llm`. Any output that fails is not displayed.
+- **Grounding:** every entry in `cited_fields` must exist in the post's provenance record, and each "What AI did" line needs at least one cited `actions[i]`. This makes invented details detectable.
+- **Consistency with the rule-based label:** the explanation can't contradict the label from `levelFor`. Examples: AI actions on a camera original or a post with no record, "camera" in an AI-generated summary, or a missing "no label does not mean verified" warning are all rejected. The summary also can't call the claim true, false, fake, genuine or accurate, because provenance can't establish that.
+- *Checked:* `tests/validate.test.mjs` confirms that mock output passes for all 7 posts and that 16 hand-made bad outputs each fail with the expected error (23/23 pass).
 
 ## AI assistance
 <!-- TO BE WRITTEN BY THE AUTHOR -->
