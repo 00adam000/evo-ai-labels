@@ -1,0 +1,107 @@
+{
+  "_note": "SIMULATED DATA. Posts and provenance records are hand-written for the prototype. Field names loosely follow C2PA manifests (actions, digitalSourceType, signature) but are simplified and not read from real files.",
+  "posts": [
+    {
+      "id": "p1",
+      "author": "Harbour Watch",
+      "handle": "@harbourwatch",
+      "text": "Storm surge hitting the sea wall at Porthleven this morning.",
+      "image_alt": "Large waves breaking over a harbour wall under a grey sky",
+      "ground_truth": "true",
+      "provenance": {
+        "signer": "Harbour Watch (verified publisher)",
+        "signed": "2026-11-14T08:12:00Z",
+        "claim_generator": "Camera app 4.2",
+        "actions": [
+          { "action": "created", "digitalSourceType": "digitalCapture", "tool": "Phone camera" },
+          { "action": "color_adjustments", "tool": "Photo editor (manual)" }
+        ]
+      }
+    },
+    {
+      "id": "p2",
+      "author": "City Life Daily",
+      "handle": "@citylifedaily",
+      "text": "Crowds gather for the lantern festival on Broad Street.",
+      "image_alt": "Night street scene with hundreds of paper lanterns and a crowd",
+      "ground_truth": "true",
+      "provenance": {
+        "signer": "City Life Daily",
+        "signed": "2026-11-13T21:40:00Z",
+        "claim_generator": "Photo editor 9.1",
+        "actions": [
+          { "action": "created", "digitalSourceType": "digitalCapture", "tool": "DSLR camera" },
+          { "action": "edited", "digitalSourceType": "compositeWithTrainedAlgorithmicMedia", "tool": "Generative fill", "region": "sky (upper third of image)", "description": "Overcast sky replaced with generated clear night sky" }
+        ]
+      }
+    },
+    {
+      "id": "p3",
+      "author": "Future Cities",
+      "handle": "@futurecities",
+      "text": "What our high street could look like in 2040.",
+      "image_alt": "Futuristic street with vertical gardens and autonomous trams",
+      "ground_truth": "illustration",
+      "provenance": {
+        "signer": "Future Cities",
+        "signed": "2026-11-12T10:05:00Z",
+        "claim_generator": "Image generator 3",
+        "actions": [
+          { "action": "created", "digitalSourceType": "trainedAlgorithmicMedia", "tool": "Text-to-image model", "description": "Generated from a text prompt" }
+        ]
+      }
+    },
+    {
+      "id": "p4",
+      "author": "Breaking Now 24",
+      "handle": "@breakingnow24",
+      "text": "BREAKING: Bridge collapse on the M6 near Junction 7, traffic stopped.",
+      "image_alt": "A motorway bridge with a collapsed central span",
+      "ground_truth": "false",
+      "provenance": {
+        "signer": "Unverified account",
+        "signed": "2026-11-15T07:58:00Z",
+        "claim_generator": "Image generator 3",
+        "actions": [
+          { "action": "created", "digitalSourceType": "trainedAlgorithmicMedia", "tool": "Text-to-image model", "description": "Generated from a text prompt" },
+          { "action": "edited", "tool": "Photo editor", "description": "Text overlay and crop added" }
+        ]
+      }
+    },
+    {
+      "id": "p5",
+      "author": "Local Bakes",
+      "handle": "@localbakes",
+      "text": "Fresh sourdough out of the oven, open till 4 today!",
+      "image_alt": "Three loaves of sourdough bread on a wooden counter",
+      "ground_truth": "true",
+      "provenance": null
+    },
+    {
+      "id": "p6",
+      "author": "Viral Wildlife",
+      "handle": "@viralwildlife",
+      "text": "Rare white stag spotted in the Peak District!",
+      "image_alt": "A white stag standing in heather at dawn",
+      "ground_truth": "unknown",
+      "provenance": null
+    },
+    {
+      "id": "p7",
+      "author": "Sam's Travels",
+      "handle": "@samstravels",
+      "text": "Sunrise over Loch Lomond, no filter needed.",
+      "image_alt": "Mist over a loch at sunrise",
+      "ground_truth": "true",
+      "provenance": {
+        "signer": "Sam's Travels",
+        "signed": "2026-11-10T07:20:00Z",
+        "claim_generator": "Camera app 4.2",
+        "actions": [
+          { "action": "created", "digitalSourceType": "digitalCapture", "tool": "Phone camera" },
+          { "action": "edited", "digitalSourceType": "algorithmicallyEnhanced", "tool": "AI denoise", "description": "Automatic noise reduction" }
+        ]
+      }
+    }
+  ]
+}
