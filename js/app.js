@@ -1,4 +1,5 @@
 import { LEVELS, levelFor } from "./labels.js";
+import { mockExplain } from "./explainer.js";
 
 const feedEl = document.getElementById("feed");
 
@@ -37,12 +38,47 @@ function renderPost(post) {
   }, el("strong", {}, info.text), el("span", { class: "label-short" }, info.short));
   image.append(label);
 
+  // Explanation panel, hidden until the label is pressed (detail on demand).
+  const panel = renderExplanation(post, info);
+  label.setAttribute("aria-expanded", "false");
+  label.setAttribute("aria-controls", panel.id);
+  label.addEventListener("click", () => {
+    const open = label.getAttribute("aria-expanded") === "true";
+    label.setAttribute("aria-expanded", String(!open));
+    panel.hidden = open;
+  });
+
   return el("article", { class: "post", id: post.id },
     el("div", { class: "post-head" },
       el("span", { class: "author" }, post.author),
       el("span", { class: "handle" }, post.handle)),
     el("p", { class: "post-text" }, post.text),
-    image);
+    image,
+    panel);
+}
+
+function list(items) {
+  return el("ul", {}, ...items.map((t) => el("li", {}, t)));
+}
+
+function renderExplanation(post, info) {
+  const ex = mockExplain(post);
+  const panel = el("section", {
+    class: "explain",
+    id: `explain-${post.id}`,
+    "aria-label": `Label explanation for ${post.author}'s post`,
+  },
+    el("p", { class: "explain-level" }, `Label: ${info.text}`),
+    el("p", { class: "explain-summary" }, ex.summary));
+
+  if (ex.what_ai_did.length) {
+    panel.append(el("h3", {}, "What AI did"), list(ex.what_ai_did));
+  }
+  panel.append(
+    el("h3", {}, "What we don't know"), list(ex.what_is_unknown),
+    el("p", { class: "explain-foot" }, "Explanation built from the provenance record (offline mode)."));
+  panel.hidden = true;
+  return panel;
 }
 
 async function main() {

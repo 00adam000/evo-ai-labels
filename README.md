@@ -28,6 +28,12 @@ python3 -m http.server 8000
 - **Label placed on the image with a one-line summary.** A1 notes some participants never saw small labels under images (Wittenberg et al., 2025).
 - *Checked:* ran `levelFor` on all 7 posts and confirmed each level appears as intended (p1 captured … p7 enhanced). Rendered the page in headless Chrome to confirm the labels are visible.
 
+### Stage 2: label explanations (17 Nov 2026)
+- **Each label now expands into an explanation panel** (`js/explainer.js`, `js/app.js`): summary, "What AI did" and "What we don't know". It is built only from fields in the provenance record. The short label stays on the image and the detail appears only on demand, which keeps the default view light on cognitive load.
+- **"What we don't know" is always shown.** It says that provenance describes the image, not the caption, so "camera original" is not read as "the claim is true". It also flags unverified signers.
+- **Offline (mock) explainer first.** It runs without an API key and becomes the fallback when the LLM explainer is added.
+- *Checked:* ran `mockExplain` on all 7 posts with Node. A script confirmed that every value in each output comes from the record or from fixed template text. Served the site and clicked every label in headless Chromium: each panel toggles, `aria-expanded` updates, and there were no console errors.
+
 ## AI assistance
 <!-- TO BE WRITTEN BY THE AUTHOR -->
 
