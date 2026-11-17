@@ -1,0 +1,59 @@
+:root {
+  --bg: #f4f4f2;
+  --card: #ffffff;
+  --ink: #1d1d1b;
+  --muted: #6b6b66;
+  --line: #e2e2dd;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+.topbar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: 18px; margin: 0; }
+.proto-badge { font-size: 12px; color: var(--muted); border: 1px dashed var(--muted); padding: 2px 8px; border-radius: 99px; }
+
+#feed { max-width: 560px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.post { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.post-head { display: flex; gap: 8px; align-items: baseline; }
+.author { font-weight: 600; }
+.handle { color: var(--muted); font-size: 14px; }
+.post-text { margin: 6px 0 10px; }
+
+.img-placeholder {
+  position: relative; aspect-ratio: 4 / 3; border-radius: 8px;
+  background: repeating-linear-gradient(45deg, #ececea 0 12px, #e4e4e1 12px 24px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; text-align: center; color: var(--muted);
+}
+.ph-tag { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.ph-alt { font-style: italic; margin-top: 4px; }
+
+/* Graded label: placed on the image (top-left), large enough to be noticed. */
+.ai-label {
+  position: absolute; top: 10px; left: 10px; max-width: 75%;
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+  border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  font: inherit; font-size: 13px; color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+.ai-label strong { font-size: 14px; }
+.ai-label .label-short { font-size: 12px; opacity: .92; }
+.ai-label:focus-visible { outline: 3px solid #000; outline-offset: 2px; }
+
+/* Colours are ordered by AI involvement; text always states the level too. */
+.lvl-captured  { background: #2f6b3a; }
+.lvl-enhanced  { background: #3d6a8a; }
+.lvl-edited    { background: #9a5b00; }
+.lvl-generated { background: #8a2d2d; }
+.lvl-none      { background: #55554f; }
+
+.loading, .error { text-align: center; color: var(--muted); }
+.error { color: #8a2d2d; }

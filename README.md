@@ -21,7 +21,12 @@ python3 -m http.server 8000
 ```
 
 ## Development record
-(in progress: significant changes, why, and what I checked)
+### Stage 1: feed and graded labels (17 Nov)
+- **Five label levels instead of a binary "AI-generated" tag.** A1 found binary labels lower trust in true content because viewers assume full automation (Altay and Gilardi, 2024). The levels are camera original, AI-enhanced, edited with AI, AI-generated, and no provenance info.
+- **Label level computed by fixed rules from the provenance record (`js/labels.js`), not by the LLM.** The AI should explain a label, never decide it, so a model error cannot mislabel a post.
+- **"No provenance info" shown as its own label, not left blank.** This addresses the implied truth effect (Pennycook et al., 2020): unlabelled posts otherwise read as verified.
+- **Label placed on the image with a one-line summary.** A1 notes some participants never saw small labels under images (Wittenberg et al., 2025).
+- *Checked:* ran `levelFor` on all 7 posts and confirmed each level appears as intended (p1 captured … p7 enhanced). Rendered the page in headless Chrome to confirm the labels are visible.
 
 ## AI assistance
 (in progress)
