@@ -29,7 +29,7 @@ python3 -m http.server 8000
 - *Checked:* ran `levelFor` on all 7 posts and confirmed each level appears as intended (p1 captured … p7 enhanced). Rendered the page in headless Chrome to confirm the labels are visible.
 
 ## AI assistance
-(in progress)
+<!-- TO BE WRITTEN BY THE AUTHOR -->
 
 ## Additional files
 None yet.
