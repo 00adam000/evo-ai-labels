@@ -1,6 +1,6 @@
 import { LEVELS, levelFor } from "./labels.js";
 import { getExplanation } from "./explain-service.js";
-import { loadSettings, saveSetting } from "./settings.js";
+import { loadSettings, saveSetting, prefillFromLocalConfig } from "./settings.js";
 import { DEFAULT_MODEL } from "./llm.js";
 
 const feedEl = document.getElementById("feed");
@@ -149,6 +149,7 @@ function setupSettings() {
 }
 
 async function main() {
+  await prefillFromLocalConfig();
   setupSettings();
   try {
     const posts = await loadPosts();

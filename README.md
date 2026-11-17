@@ -28,6 +28,8 @@ node tests/llm.test.mjs
 
 **AI mode (optional):** open the ⚙ settings in the top bar, choose *AI*, and paste your own Anthropic API key. The key is kept in `sessionStorage` only, so it is cleared when the tab closes. It is never written to `localStorage` or the repo, and it is sent only to `api.anthropic.com`. The model field defaults to `claude-haiku-5-5`. If the key is missing or wrong, or the AI output fails a check, the panel shows the offline explanation and a notice saying why.
 
+**Developers** can instead put their key in a gitignored `config.local.js` at the repo root, containing `window.LOCAL_CONFIG = { apiKey: "YOUR_ANTHROPIC_API_KEY" };`, and open the page with `?dev` (e.g. `http://localhost:8000/?dev`). The key is copied into `sessionStorage` only if no key is set there yet. **Reviewers** can just paste a key in settings.
+
 ## Development record
 ### Stage 1: feed and graded labels (17 Nov)
 - **Five label levels instead of a binary "AI-generated" tag.** A1 found binary labels lower trust in true content because viewers assume full automation (Altay and Gilardi, 2024). The levels are camera original, AI-enhanced, edited with AI, AI-generated, and no provenance info.
