@@ -17,7 +17,7 @@ export const EXPLANATION_TOOL = {
     type: "object",
     properties: {
       summary: { type: "string", description: "At most 2 sentences." },
-      what_ai_did: { type: "array", items: { type: "string" }, description: "One line per AI action in the record. Empty if none." },
+      what_ai_did: { type: "array", items: { type: "string" }, description: "One line per action whose digitalSourceType is algorithmicallyEnhanced, compositeWithTrainedAlgorithmicMedia or trainedAlgorithmicMedia. Never camera capture or manual edits. Empty if none." },
       what_is_unknown: { type: "array", items: { type: "string" } },
       cited_fields: { type: "array", items: { type: "string" }, description: 'Record fields used, e.g. "signer", "actions[1]".' },
     },
@@ -35,6 +35,8 @@ Rules:
 5. what_is_unknown must always include that provenance describes the image, not the caption.
 6. If the provenance is null: what_ai_did must be empty, cited_fields must be empty, and what_is_unknown must say that having no label does not mean the post is verified or real.
 7. Plain English, no jargon. The summary is at most 2 sentences.
+8. what_ai_did lists ONLY actions whose digitalSourceType is algorithmicallyEnhanced, compositeWithTrainedAlgorithmicMedia or trainedAlgorithmicMedia, one item per such action. Never include camera capture (digitalCapture) or manual edits (no digitalSourceType). If there are no such actions, what_ai_did is empty.
+9. Never write field names or brackets such as "actions[0]", "cited_fields" or "digitalSourceType" in summary, what_ai_did or what_is_unknown. Citations go only in cited_fields.
 Answer by calling give_explanation.`;
 
 // A failure with a short reason the UI can show, e.g. "timeout" or "HTTP 401".

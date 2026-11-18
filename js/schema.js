@@ -8,6 +8,10 @@ const RECORD_FIELDS = ["signer", "claim_generator", "signed"];
 const NOT_VERIFIED = /\bno(t)?\b.*\b(verified|real)\b/i;
 const CAMERA_WORDS = /\bcamera\b|\breal photo\b|\bphotographed\b/i;
 const TRUTH_WORDS = /\b(true|untrue|false|fake|genuine|accurate|inaccurate)\b/i;
+// TODO(author): explain why these source types count as AI and others (camera capture, manual edits) don't
+const AI_SOURCE_TYPES = ["algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"];
+// TODO(author): explain why internal field names and braces must never reach user-facing text
+const INTERNAL_TEXT = ["actions[", "cited_fields", "digitalSourceType", "{"];
 
 const isStringArray = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");
 
@@ -43,18 +47,23 @@ export function validateExplanation(result, post) {
   const hasRecord = !!p && Array.isArray(p.actions);
 
   // --- Grounding: every citation must exist in the record ---
-  let citesAction = false;
+  const isAiAction = (a) => !!a && AI_SOURCE_TYPES.includes(a.digitalSourceType);
+  const aiActionCount = hasRecord ? p.actions.filter(isAiAction).length : 0;
+  let citesAiAction = false;
   for (const f of cited_fields) {
     const m = f.match(/^actions\[(\d+)\]$/);
     if (!hasRecord) errors.push(`citation to ${f} but the post has no provenance record`);
     else if (m) {
-      if (+m[1] < p.actions.length) citesAction = true;
-      else errors.push(`citation out of range: ${f} (record has ${p.actions.length} actions)`);
+      if (+m[1] >= p.actions.length) errors.push(`citation out of range: ${f} (record has ${p.actions.length} actions)`);
+      else if (isAiAction(p.actions[+m[1]])) citesAiAction = true;
     } else if (!RECORD_FIELDS.includes(f) || p[f] === undefined) {
       errors.push(`citation not in record: ${f}`);
     }
   }
-  if (what_ai_did.length && !citesAction) errors.push("what_ai_did items need at least one cited actions[i]");
+  if (what_ai_did.length > aiActionCount) {
+    errors.push(`what_ai_did has ${what_ai_did.length} items but the record has ${aiActionCount} AI actions`);
+  }
+  if (what_ai_did.length && !citesAiAction) errors.push("what_ai_did items need at least one cited actions[i] that is an AI action");
 
   // --- Consistency with the rule-based label ---
   const level = levelFor(p);
@@ -72,6 +81,12 @@ export function validateExplanation(result, post) {
   // --- Safety of claims: provenance can't show the claim is true or false ---
   const w = summary.match(TRUTH_WORDS);
   if (w) errors.push(`summary judges the claim's truth ("${w[0]}")`);
+
+  const userText = [["summary", summary], ...what_ai_did.map((s, i) => [`what_ai_did[${i}]`, s]), ...what_is_unknown.map((s, i) => [`what_is_unknown[${i}]`, s])];
+  for (const [where, text] of userText) {
+    const bad = INTERNAL_TEXT.find((t) => text.includes(t));
+    if (bad) errors.push(`${where} contains internal text ("${bad}")`);
+  }
 
   return { ok: errors.length === 0, errors };
 }

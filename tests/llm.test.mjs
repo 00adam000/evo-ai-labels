@@ -71,6 +71,15 @@ clearExplanationCache();
     "(c) 'post is fake' summary falls back to offline", notice);
 }
 
+// TODO(author): explain the internal-text fallback test
+clearExplanationCache();
+{
+  const f = fakeFetch(() => toolUse({ ...GOOD_P2, what_ai_did: ["The sky was replaced with a generated night sky (actions[1])."] }));
+  const { result, notice } = await getExplanation(byId.p2, ai(f));
+  check(result?.source === "mock" && /failed safety checks/.test(notice) && /internal text/.test(notice),
+    "(c2) '(actions[1])' in what_ai_did falls back to offline", notice);
+}
+
 // (d) HTTP 401 falls back with an "unavailable" notice that includes the status
 clearExplanationCache();
 {
