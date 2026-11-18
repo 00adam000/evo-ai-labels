@@ -53,6 +53,14 @@ clearExplanationCache();
   check(f.calls.length === 1, "(a2) second open of the same post uses the cache", `${f.calls.length} API call(s)`);
 }
 
+// (a3) the live-test explanation that cites label_level is now shown
+clearExplanationCache();
+{
+  const f = fakeFetch(() => toolUse({ ...GOOD_P2, cited_fields: ["label_level", "signer", "actions[1]"] }));
+  const { result, notice } = await getExplanation(byId.p2, ai(f));
+  check(result?.source === "llm" && notice === null, "(a3) explanation citing label_level is shown", notice ?? "no notice");
+}
+
 // (b) citation to actions[9] falls back with a "failed safety checks" notice
 clearExplanationCache();
 {
@@ -150,6 +158,10 @@ clearExplanationCache();
     "(g3) endpoint and headers are correct");
   check(body.model === "claude-haiku-5-5" && body.max_tokens === 600 && !("temperature" in body),
     "(g4) default model claude-haiku-5-5, max_tokens 600, no temperature", `model=${body.model}`);
+  check(body.system.includes('Allowed names in cited_fields: "label_level", "signer", "signed", "claim_generator", "actions[i]"'),
+    "(g6) explanation prompt lists exactly the citation names the validator accepts");
+  check(/Never write source type names/.test(body.system) && /"created by AI"/.test(body.system),
+    "(g7) explanation prompt asks for plain words instead of source type names");
   const user = JSON.parse(body.messages[0].content);
   check(user.label_level === "AI-generated" && Object.keys(user).join() === "label_level,provenance",
     "(g5) user message holds only the label level and the record", Object.keys(user).join(", "));

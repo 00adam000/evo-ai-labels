@@ -47,6 +47,11 @@ const BAD = [
   ["'cited_fields' in summary", "p2", () => ({ ...mock("p2"), summary: "Part of the image was changed by AI, see cited_fields." }), /summary contains internal text \("cited_fields"\)/],
   ["'digitalSourceType' in what_is_unknown", "p7", () => ({ ...mock("p7"), what_is_unknown: ["Whether the caption is accurate.", "What digitalSourceType means here."] }), /what_is_unknown\[1\] contains internal text \("digitalSourceType"\)/],
   ["'{' in summary", "p3", () => ({ ...mock("p3"), summary: "This image was AI-generated {tool: Text-to-image model}." }), /summary contains internal text \("\{"\)/],
+  ["citation to 'caption'", "p2", () => { const r = mock("p2"); r.cited_fields.push("caption"); return r; }, /citation not in record: caption/],
+  ["'label_level' in summary", "p2", () => ({ ...mock("p2"), summary: "The label_level is Edited with AI." }), /summary contains internal text \("label_level"\)/],
+  ["'(trainedAlgorithmicMedia)' in what_ai_did", "p3", () => ({ ...mock("p3"), what_ai_did: ["Created the image with a text-to-image model (trainedAlgorithmicMedia)."] }), /what_ai_did\[0\] contains internal text \("trainedAlgorithmicMedia"\)/],
+  ...["digitalCapture", "algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"].map((t) =>
+    [`source type '${t}' in summary`, "p2", () => ({ ...mock("p2"), summary: `This image is ${t}.` }), new RegExp(`summary contains internal text \\("${t}"\\)`)]),
 ];
 
 console.log("\nInvalid output (must be rejected):");
@@ -88,6 +93,16 @@ for (const [name, expected] of LIVE_EXPECTED) {
   report(!!e, `live p2 output: flags ${name}`, e ?? `got: ${live.errors.join("; ")}`);
 }
 
-const total = posts.length + BAD.length + 1 + LIVE_EXPECTED.length;
+console.log("\nCiting the label level (must be accepted):");
+const ACCEPTED = [
+  ["p2 explanation citing label_level", "p2", () => { const r = mock("p2"); r.cited_fields.unshift("label_level"); return r; }],
+  ["p5 (no record) explanation citing only label_level", "p5", () => ({ ...mock("p5"), cited_fields: ["label_level"] })],
+];
+for (const [name, id, make] of ACCEPTED) {
+  const r = validateExplanation(make(), byId[id]);
+  report(r.ok, `accepts ${name}`, r.errors.join("; "));
+}
+
+const total = posts.length + BAD.length + 1 + LIVE_EXPECTED.length + ACCEPTED.length;
 console.log(`\n${total - failed}/${total} passed`);
 process.exit(failed ? 1 : 0);

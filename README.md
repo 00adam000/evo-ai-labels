@@ -23,7 +23,10 @@ python3 -m http.server 8000
 node tests/validate.test.mjs
 node tests/llm.test.mjs
 node tests/answer.test.mjs
+node tests/ui.test.mjs   # headless Chromium; set CHROME=/path/to/chromium if it isn't found
 ```
+
+`python3 -m http.server` sends no `Cache-Control` header, so after pulling changes the browser may keep running old JS modules. Hard-reload (Ctrl+Shift+R) before testing.
 
 **Offline mode** is the default and needs no key: explanations are built by fixed rules from the provenance record.
 
@@ -67,6 +70,12 @@ node tests/answer.test.mjs
 - **"The record doesn't say" is a valid answer, and it is checked.** An answer marked as not answerable must say plainly that the record lacks the information and must cite nothing. An answerable one must cite at least one field that exists in the record. The model has a correct option when the record is silent, so it has no reason to guess, and a guess with no support in the record is rejected.
 - **The "Is this post true?" question exists because of the mental-model problem from A1:** people read provenance as a verdict on truth. The answer must first say that provenance shows how the image was made, not whether the caption is true, and then say what the record does show. The validator rejects any answer that calls the post true, false, fake, real, genuine or accurate, but allows hedged wording such as "doesn't show whether the caption is true".
 - *Checked:* `tests/answer.test.mjs` (58/58 pass) confirms that the offline answers for all 7 posts and 3 questions pass the validator, that 16 bad answers are rejected and 4 hedged ones accepted, that the request contains no caption, author or ground truth and forces `give_answer`, and that a typed question the record can't answer ("What camera settings were used?") is shown as answerable=false. In headless Chromium, the offline answers for p2, p4 and p5 rendered, the five-question limit applied, and there were no console errors.
+
+### Stage 7: second live test (18 Nov 2026)
+- **A check that was too strict made AI mode useless.** The model cited `label_level`, which is part of its input and decided by fixed rules. The validator accepted only record fields, so every AI explanation was rejected and replaced by the offline one. The fix puts the allowed citation names (`label_level`, `signer`, `signed`, `claim_generator`, `actions[i]`) in a single list in `js/schema.js`. Both prompts are built from that list, so the model is told exactly what the validator accepts, and any other name such as `caption` is still rejected.
+- **The suggested questions were missing after a fallback.** The current code could not reproduce this in any render path. The most likely cause is that the browser was running a cached pre-Stage-6 `app.js`. The explanation now renders into its own container next to the questions section, so no render path can remove it. A new headless test covers every path. The README also notes that a hard reload is needed after changes.
+- **The text shown to users contained source type names such as "(trainedAlgorithmicMedia)".** All four `digitalSourceType` values and `label_level` are now on the validator's internal-text list for explanations and answers. Both prompts also ask for plain words such as "created by AI".
+- *Checked:* `tests/validate.test.mjs` (43/43), `tests/llm.test.mjs` (22/22) and `tests/answer.test.mjs` (69/69) cover the following: explanations and answers that cite `label_level` pass, `caption` fails, each source type name is rejected, and both prompts list the same citation names as the validator. `tests/ui.test.mjs` (13/13) uses a fake API in headless Chromium to confirm that the questions appear after every render path: offline, success, safety-check fallback, HTTP 500, network error, missing key, and switching to AI with the panel open. Putting the old bug back made all 13 cases fail.
 
 ## AI assistance
 <!-- TO BE WRITTEN BY THE AUTHOR -->

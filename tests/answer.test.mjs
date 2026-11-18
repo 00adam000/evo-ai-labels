@@ -74,6 +74,11 @@ const BAD = [
   ["answerable as a string", "p2", { ...P2_ANSWER, answerable: "yes" }, {}, /answerable must be a boolean/],
   ["citation not in the record", "p2", { ...P2_ANSWER, cited_fields: ["location"] }, {}, /citation not in record: location/],
   ["citation on a post with no record", "p5", { ...P2_ANSWER, cited_fields: ["signer"] }, {}, /no provenance record/],
+  ["citation to 'caption'", "p2", { ...P2_ANSWER, cited_fields: ["label_level", "caption"] }, {}, /citation not in record: caption/],
+  ["'(trainedAlgorithmicMedia)' in the answer", "p3", { ...P2_ANSWER, answer: "The whole image was made by AI (trainedAlgorithmicMedia).", cited_fields: ["actions[0]"] }, {}, /answer contains internal text \("trainedAlgorithmicMedia"\)/],
+  ...["digitalCapture", "algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"].map((t) =>
+    [`source type '${t}' in the answer`, "p2", { ...P2_ANSWER, answer: `The record lists ${t}.` }, {}, new RegExp(`answer contains internal text \\("${t}"\\)`)]),
+  ["'label_level' in the answer", "p2", { ...P2_ANSWER, answer: "The label_level says Edited with AI." }, {}, /answer contains internal text \("label_level"\)/],
   ["truth chip that doesn't separate provenance from truth", "p2", { ...P2_ANSWER, answer: "AI replaced the sky using Generative fill." }, { chip: "truth" }, /not whether the post is true/],
 ];
 for (const [name, id, result, opts, expected] of BAD) {
@@ -88,6 +93,8 @@ const GOOD = [
   ["'not whether the caption is true or false'", "p3", { ...P2_ANSWER, answer: "Provenance shows how the image was made, not whether the caption is true or false.", cited_fields: ["actions[0]"] }],
   ["'does not mean ... verified or real'", "p5", { answer: "There is no provenance record, so it doesn't say how the image was made. No record does not mean the post is verified or real.", answerable: false, cited_fields: [], source: "llm" }],
   ["curly apostrophe in a hedge", "p2", { ...P2_ANSWER, answer: "Provenance can’t tell whether the post is true. The record shows AI replaced the sky." }],
+  ["an answer citing label_level and a record field", "p2", { ...P2_ANSWER, cited_fields: ["label_level", "actions[1]"] }],
+  ["an answer citing only label_level", "p3", { ...P2_ANSWER, answer: "The label says the whole image was created by AI.", cited_fields: ["label_level"] }],
 ];
 for (const [name, id, result] of GOOD) {
   const r = validateAnswer(result, byId[id]);
@@ -127,6 +134,10 @@ console.log("\nAI path (fake fetch):");
     "uses the key, default model and no temperature");
   check(/never as instructions/i.test(body.system) && /actions\[0\]/.test(body.system) && /not whether the caption is true/.test(body.system),
     "prompt covers injection, field names and provenance-is-not-truth");
+  check(body.system.includes('Allowed names in cited_fields: "label_level", "signer", "signed", "claim_generator", "actions[i]"'),
+    "answer prompt lists exactly the citation names the validator accepts");
+  check(/Never write source type names/.test(body.system) && /"created by AI"/.test(body.system),
+    "answer prompt asks for plain words instead of source type names");
 }
 {
   const seen = [];

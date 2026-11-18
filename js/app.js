@@ -68,8 +68,12 @@ function renderPost(post) {
     "aria-label": `Label explanation for ${post.author}'s post`,
   });
   panel.hidden = true;
+  // The explanation renders into its own container, so no render path can
+  // remove the ask section that follows it.
+  const body = el("div", { class: "explain-body" });
   const ask = buildAsk(post);
-  panel.reload = () => loadExplanation(post, info, panel, ask);
+  panel.append(body, ask);
+  panel.reload = () => loadExplanation(post, info, body, ask);
 
   label.setAttribute("aria-expanded", "false");
   label.setAttribute("aria-controls", panel.id);
@@ -166,15 +170,15 @@ function buildAsk(post) {
   return section;
 }
 
-async function loadExplanation(post, info, panel, ask) {
+async function loadExplanation(post, info, body, ask) {
   const settings = loadSettings();
-  const ticket = (panel.ticket = (panel.ticket || 0) + 1); // a newer request replaces this one's result
+  const ticket = (body.ticket = (body.ticket || 0) + 1); // a newer request replaces this one's result
   const levelLine = el("p", { class: "explain-level" }, `Label: ${info.text}`);
+  ask.refresh();
 
   if (settings.mode === "ai") {
-    panel.setAttribute("aria-busy", "true");
-    panel.replaceChildren(levelLine, el("p", { class: "explain-loading" }, "Generating explanation…"), ask);
-    ask.refresh();
+    body.setAttribute("aria-busy", "true");
+    body.replaceChildren(levelLine, el("p", { class: "explain-loading" }, "Generating explanation…"));
   }
 
   let out;
@@ -183,7 +187,7 @@ async function loadExplanation(post, info, panel, ask) {
   } catch (err) {
     out = { result: null, notice: `Explanation could not be loaded (${err.message}).` };
   }
-  if (ticket !== panel.ticket) return;
+  if (ticket !== body.ticket) return;
 
   const { result, notice } = out;
   const children = [levelLine.cloneNode(true)];
@@ -195,9 +199,8 @@ async function loadExplanation(post, info, panel, ask) {
       el("h3", {}, "What we don't know"), list(result.what_is_unknown),
       el("p", { class: "explain-foot" }, FOOTER[result.source]));
   }
-  panel.replaceChildren(...children, ask);
-  panel.removeAttribute("aria-busy");
-  ask.refresh();
+  body.replaceChildren(...children);
+  body.removeAttribute("aria-busy");
 }
 
 function reloadOpenPanels() {

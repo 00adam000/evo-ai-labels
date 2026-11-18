@@ -5,7 +5,12 @@
 import { levelFor } from "./labels.js";
 
 const KEYS = ["summary", "what_ai_did", "what_is_unknown", "cited_fields", "source"];
-const RECORD_FIELDS = ["signer", "claim_generator", "signed"];
+// The only names a citation may use, besides "actions[i]". The prompts in
+// js/llm.js list the same names, so the model and the validator agree.
+// label_level is not a record field but is part of the model's input, and it
+// is decided by fixed rules, so citing it is legitimate.
+export const CITATION_NAMES = ["label_level", "signer", "signed", "claim_generator"];
+const RECORD_FIELDS = ["signer", "signed", "claim_generator"];
 const NOT_VERIFIED = /\bno(t)?\b.*\b(verified|real)\b/i;
 const CAMERA_WORDS = /\bcamera\b|\breal photo\b|\bphotographed\b/i;
 const TRUTH_WORDS = /\b(true|untrue|false|fake|genuine|accurate|inaccurate)\b/i;
@@ -14,7 +19,8 @@ const TRUTH_WORDS = /\b(true|untrue|false|fake|genuine|accurate|inaccurate)\b/i;
 const AI_SOURCE_TYPES = ["algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"];
 // Field names or JSON in the shown text mean the model copied record internals
 // into prose meant for readers; citations belong in cited_fields only.
-const INTERNAL_TEXT = ["actions[", "cited_fields", "digitalSourceType", "{"];
+const SOURCE_TYPES = ["digitalCapture", ...AI_SOURCE_TYPES];
+const INTERNAL_TEXT = ["actions[", "cited_fields", "label_level", "digitalSourceType", "{", ...SOURCE_TYPES];
 
 const ANSWER_KEYS = ["answer", "answerable", "cited_fields", "source"];
 const MAX_ANSWER_LENGTH = 400;
@@ -39,6 +45,7 @@ function checkCitations(cited, p) {
   let citesAiAction = false;
   for (const f of cited) {
     const m = f.match(/^actions\[(\d+)\]$/);
+    if (f === "label_level") continue;
     if (!hasRecord) errors.push(`citation to ${f} but the post has no provenance record`);
     else if (m) {
       if (+m[1] >= p.actions.length) errors.push(`citation out of range: ${f} (record has ${p.actions.length} actions)`);
