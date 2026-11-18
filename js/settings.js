@@ -37,11 +37,10 @@ export function saveSetting(name, value) {
   write(name, value.trim());
 }
 
-// Developer convenience: with ?dev in the URL, load the gitignored
-// config.local.js from the repo root and use its key if none is set yet.
-// Without ?dev no request is made, because the browser logs a 404 for a
-// missing file and page code can't suppress that. A missing or broken file
-// is ignored. The key's value is never logged.
+// For development: with ?dev in the URL, use the key from the gitignored
+// config.local.js if no key is set yet. The file is only requested with ?dev,
+// since a missing file logs a 404 in the console that page code can't hide.
+// A missing or broken file is ignored, and the key is never logged.
 export async function prefillFromLocalConfig() {
   if (!new URLSearchParams(location.search).has("dev")) return;
   if (loadSettings().apiKey) return;

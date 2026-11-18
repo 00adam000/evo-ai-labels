@@ -82,7 +82,7 @@ function renderPost(post) {
 
 async function loadExplanation(post, info, panel) {
   const settings = loadSettings();
-  const ticket = (panel.ticket = (panel.ticket || 0) + 1); // ignore stale responses
+  const ticket = (panel.ticket = (panel.ticket || 0) + 1); // a newer request replaces this one's result
   const levelLine = el("p", { class: "explain-level" }, `Label: ${info.text}`);
 
   if (settings.mode === "ai") {

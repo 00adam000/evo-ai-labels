@@ -71,7 +71,7 @@ clearExplanationCache();
     "(c) 'post is fake' summary falls back to offline", notice);
 }
 
-// TODO(author): explain the internal-text fallback test
+// (c2) field names such as "(actions[1])" in shown text fall back, as seen in the first live run
 clearExplanationCache();
 {
   const f = fakeFetch(() => toolUse({ ...GOOD_P2, what_ai_did: ["The sky was replaced with a generated night sky (actions[1])."] }));
@@ -103,7 +103,7 @@ clearExplanationCache();
     "(e) timeout falls back to offline", `${notice} after ${Date.now() - t0} ms`);
 }
 {
-  // The real default is 15 s: check llmExplain arms the timer at that value.
+  // The default timeout is 15 s: check that llmExplain sets its timer to that value.
   const seen = [];
   const realSetTimeout = globalThis.setTimeout;
   globalThis.setTimeout = (fn, ms) => { seen.push(ms); return realSetTimeout(() => {}, 0); };
@@ -113,9 +113,9 @@ clearExplanationCache();
 }
 
 // (f) request body contains no caption, author or ground_truth (all 7 posts).
-// The record's own "signer" may name the publisher (that is provenance), so:
-// the provenance sent must equal the post's record exactly, and everything
-// else in the request must not contain any of the post's other fields.
+// The record's "signer" can legitimately repeat the author's name, so the
+// provenance is compared to the post's record as a whole, and only the rest
+// of the request is searched for the post's other fields.
 {
   const leaks = [];
   for (const post of posts) {

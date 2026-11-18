@@ -30,7 +30,8 @@ export const LEVELS = {
   },
 };
 
-// IPTC digital source types (simplified) mapped to severity.
+// Severity of each IPTC digital source type (simplified). The most severe
+// action in the record sets the label level.
 const SEVERITY = {
   digitalCapture: 0,
   algorithmicallyEnhanced: 1,

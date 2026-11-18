@@ -56,7 +56,9 @@ for (const [name, id, make, expected] of BAD) {
   report(!r.ok && hit, `rejects ${name}`, hit ? r.errors.find((e) => expected.test(e)) : `got: ${r.errors.join("; ") || "accepted"}`);
 }
 
-// TODO(author): explain the live-test reproduction block
+// Real output from the first live run (claude-haiku-5-5, post p2). The old
+// validator accepted it although it counted the camera capture as AI and put
+// field names in the text.
 console.log("\nLive failure (p2, claude-haiku-5-5):");
 const LIVE_P2 = {
   summary: "This image was labeled \"Edited with AI.\" The provenance shows it started as a camera photo, and an AI generative fill tool later replaced the overcast sky in the upper part of the image with a generated clear night sky.",
@@ -70,7 +72,7 @@ const LIVE_P2 = {
     "The record does not say why the sky was replaced or whether the change was disclosed to viewers outside this record.",
     "The record does not show whether the scene itself was as photographed or what happened at the location.",
   ],
-  // TODO(author): explain that cited_fields is assumed (it was not visible in the live-run screenshot)
+  // Not visible in the screenshot of the live run, so this value is assumed.
   cited_fields: ["actions[0]", "actions[1]"],
   source: "llm",
 };

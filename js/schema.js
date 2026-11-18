@@ -8,9 +8,11 @@ const RECORD_FIELDS = ["signer", "claim_generator", "signed"];
 const NOT_VERIFIED = /\bno(t)?\b.*\b(verified|real)\b/i;
 const CAMERA_WORDS = /\bcamera\b|\breal photo\b|\bphotographed\b/i;
 const TRUTH_WORDS = /\b(true|untrue|false|fake|genuine|accurate|inaccurate)\b/i;
-// TODO(author): explain why these source types count as AI and others (camera capture, manual edits) don't
+// Only these source types involve AI. Camera capture and manual edits (no
+// source type) must not be described as something AI did.
 const AI_SOURCE_TYPES = ["algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"];
-// TODO(author): explain why internal field names and braces must never reach user-facing text
+// Field names or JSON in the shown text mean the model copied record internals
+// into prose meant for readers; citations belong in cited_fields only.
 const INTERNAL_TEXT = ["actions[", "cited_fields", "digitalSourceType", "{"];
 
 const isStringArray = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");

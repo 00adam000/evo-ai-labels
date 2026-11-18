@@ -58,8 +58,8 @@ export function buildUserMessage(post) {
 }
 
 export function buildRequestBody(post, model = DEFAULT_MODEL) {
-  // No temperature: claude-haiku-5-5 rejects any value other than the default
-  // (400). The forced tool and the validator make the output predictable instead.
+  // No temperature: claude-haiku-5-5 returns HTTP 400 for any non-default value.
+  // The forced tool and the validator keep the output predictable instead.
   return {
     model,
     max_tokens: 600,
@@ -102,7 +102,7 @@ export async function llmExplain(post, {
 
   if (!res.ok) {
     let detail = "";
-    try { detail = (await res.json())?.error?.message ?? ""; } catch { /* body not JSON */ }
+    try { detail = (await res.json())?.error?.message ?? ""; } catch { /* error body was not JSON; report the status only */ }
     throw new LlmError(`HTTP ${res.status}`, `Anthropic API returned ${res.status}${detail ? `: ${detail}` : ""}`);
   }
 
