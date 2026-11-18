@@ -1,7 +1,8 @@
 import { LEVELS, levelFor } from "./labels.js";
-import { getExplanation } from "./explain-service.js";
+import { getExplanation, getAnswer } from "./explain-service.js";
 import { loadSettings, saveSetting, prefillFromLocalConfig } from "./settings.js";
-import { DEFAULT_MODEL } from "./llm.js";
+import { DEFAULT_MODEL, MAX_QUESTION_LENGTH } from "./llm.js";
+import { CHIPS } from "./explainer.js";
 
 const feedEl = document.getElementById("feed");
 
@@ -9,6 +10,14 @@ const FOOTER = {
   mock: "Explanation built from the provenance record (offline mode).",
   llm: "Written by AI from the provenance record only. Checked before display.",
 };
+
+const ANSWER_FOOTER = {
+  mock: "From the provenance record (offline mode).",
+  llm: "AI answer from the provenance record only. Checked before display.",
+};
+
+// Each question can trigger an API call, so asking is capped per post.
+const MAX_QUESTIONS = 5;
 
 // Panels that are open now; they reload when settings change.
 const openPanels = new Set();
@@ -59,7 +68,8 @@ function renderPost(post) {
     "aria-label": `Label explanation for ${post.author}'s post`,
   });
   panel.hidden = true;
-  panel.reload = () => loadExplanation(post, info, panel);
+  const ask = buildAsk(post);
+  panel.reload = () => loadExplanation(post, info, panel, ask);
 
   label.setAttribute("aria-expanded", "false");
   label.setAttribute("aria-controls", panel.id);
@@ -80,14 +90,91 @@ function renderPost(post) {
     panel);
 }
 
-async function loadExplanation(post, info, panel) {
+/** Builds the "Ask about this image" section. It lives as long as the post, so answers survive panel reloads. */
+function buildAsk(post) {
+  let asked = 0;
+  let busy = false;
+
+  const chips = CHIPS.map((c) => el("button", { type: "button", class: "chip" }, c.text));
+  const input = el("input", {
+    type: "text",
+    maxlength: String(MAX_QUESTION_LENGTH),
+    placeholder: "Ask about the record…",
+    "aria-label": "Your question about this image",
+    autocomplete: "off",
+  });
+  const askBtn = el("button", { type: "submit", class: "ask-btn" }, "Ask");
+  const form = el("form", { class: "ask-form" }, input, askBtn);
+  const offlineNote = el("p", { class: "ask-note" }, "Typed questions need AI mode");
+  const limitNote = el("p", { class: "ask-note", role: "status" }, "Question limit reached for this post");
+  const qaList = el("ol", { class: "qa-list", "aria-live": "polite" });
+  const section = el("div", { class: "ask" },
+    el("h3", {}, "Ask about this image"),
+    el("div", { class: "chips" }, ...chips),
+    form, offlineNote, limitNote, qaList);
+
+  function refresh() {
+    const aiMode = loadSettings().mode === "ai";
+    const full = asked >= MAX_QUESTIONS;
+    form.hidden = !aiMode;
+    offlineNote.hidden = aiMode;
+    limitNote.hidden = !full;
+    for (const c of [...chips, input, askBtn]) c.disabled = busy || full;
+  }
+
+  async function ask(question, label) {
+    if (busy || asked >= MAX_QUESTIONS) return;
+    asked++;
+    busy = true;
+    refresh();
+
+    const pending = el("p", { class: "qa-loading" }, "Checking the record…");
+    const item = el("li", { "aria-busy": "true" }, el("p", { class: "qa-q" }, label), pending);
+    qaList.append(item);
+
+    let out;
+    try {
+      out = await getAnswer(post, question, loadSettings());
+    } catch (err) {
+      out = { result: null, notice: `Answer could not be loaded (${err.message}).` };
+    }
+    const parts = [];
+    if (out.notice) parts.push(el("p", { class: "explain-notice", role: "status" }, out.notice));
+    if (out.result) {
+      parts.push(el("p", { class: "qa-a" }, out.result.answer),
+        el("p", { class: "qa-meta" }, ANSWER_FOOTER[out.result.source]));
+    }
+    pending.replaceWith(...parts);
+    item.removeAttribute("aria-busy");
+
+    busy = false;
+    refresh();
+    if (!input.disabled && !form.hidden && question.text) input.focus();
+  }
+
+  chips.forEach((btn, i) => btn.addEventListener("click", () => ask({ chip: CHIPS[i].id }, CHIPS[i].text)));
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    ask({ text }, text);
+  });
+
+  section.refresh = refresh;
+  refresh();
+  return section;
+}
+
+async function loadExplanation(post, info, panel, ask) {
   const settings = loadSettings();
   const ticket = (panel.ticket = (panel.ticket || 0) + 1); // a newer request replaces this one's result
   const levelLine = el("p", { class: "explain-level" }, `Label: ${info.text}`);
 
   if (settings.mode === "ai") {
     panel.setAttribute("aria-busy", "true");
-    panel.replaceChildren(levelLine, el("p", { class: "explain-loading" }, "Generating explanation…"));
+    panel.replaceChildren(levelLine, el("p", { class: "explain-loading" }, "Generating explanation…"), ask);
+    ask.refresh();
   }
 
   let out;
@@ -108,8 +195,9 @@ async function loadExplanation(post, info, panel) {
       el("h3", {}, "What we don't know"), list(result.what_is_unknown),
       el("p", { class: "explain-foot" }, FOOTER[result.source]));
   }
-  panel.replaceChildren(...children);
+  panel.replaceChildren(...children, ask);
   panel.removeAttribute("aria-busy");
+  ask.refresh();
 }
 
 function reloadOpenPanels() {

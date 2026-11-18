@@ -1,5 +1,6 @@
-// Validator for explanation output (mock or LLM). The model only proposes an
-// explanation; nothing reaches the screen unless it passes every check here.
+// Validators for explanation and follow-up answer output (mock or LLM). The
+// model only proposes text; nothing reaches the screen unless it passes every
+// check here.
 
 import { levelFor } from "./labels.js";
 
@@ -15,7 +16,49 @@ const AI_SOURCE_TYPES = ["algorithmicallyEnhanced", "compositeWithTrainedAlgorit
 // into prose meant for readers; citations belong in cited_fields only.
 const INTERNAL_TEXT = ["actions[", "cited_fields", "digitalSourceType", "{"];
 
+const ANSWER_KEYS = ["answer", "answerable", "cited_fields", "source"];
+const MAX_ANSWER_LENGTH = 400;
+const CLAIM_WORDS = /\b(true|untrue|false|fake|real|genuine|accurate|inaccurate)\b/gi;
+// A claim word is allowed only after a hedge in the same clause, as in
+// "doesn't show whether the caption is true" or "does not mean it is real".
+const HEDGE = /\bwhether\b|(?:\b(?:not|cannot|never)\b|n['’]t\b).*\b(?:show|shows|tell|tells|prove|proves|mean|means|say|says|establish|establishes|confirm|confirms)\b/i;
+// Clauses are split on commas and "but" so a hedge can't cover a later verdict,
+// as in "it doesn't say who took it, but the post is fake".
+const CLAUSE_SPLIT = /[.!?;,:]|\bbut\b/i;
+const NOT_IN_RECORD = /(?:\b(?:no|not|cannot|never)\b|n['’]t\b)[^.]*\b(?:say|says|show|shows|record|records|recorded|include|includes|contain|contains|state|states|mention|mentions|list|lists|know)\b/i;
+const PROVENANCE_NOT_TRUTH = /\bnot whether\b|(?:\b(?:not|cannot)\b|n['’]t\b)[^.]*\b(?:show|shows|tell|tells|prove|proves|establish|establishes)\b[^.]*\bwhether\b/i;
+
 const isStringArray = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");
+const isAiAction = (a) => !!a && AI_SOURCE_TYPES.includes(a.digitalSourceType);
+const internalText = (text) => INTERNAL_TEXT.find((t) => text.includes(t));
+
+/** Checks that each cited field exists in the record; also reports whether any cited action is an AI action. */
+function checkCitations(cited, p) {
+  const errors = [];
+  const hasRecord = !!p && Array.isArray(p.actions);
+  let citesAiAction = false;
+  for (const f of cited) {
+    const m = f.match(/^actions\[(\d+)\]$/);
+    if (!hasRecord) errors.push(`citation to ${f} but the post has no provenance record`);
+    else if (m) {
+      if (+m[1] >= p.actions.length) errors.push(`citation out of range: ${f} (record has ${p.actions.length} actions)`);
+      else if (isAiAction(p.actions[+m[1]])) citesAiAction = true;
+    } else if (!RECORD_FIELDS.includes(f) || p[f] === undefined) {
+      errors.push(`citation not in record: ${f}`);
+    }
+  }
+  return { errors, citesAiAction };
+}
+
+/** Returns the first claim word used as a verdict rather than inside a hedge, or null. */
+export function truthJudgment(text) {
+  for (const clause of text.split(CLAUSE_SPLIT)) {
+    for (const m of clause.matchAll(CLAIM_WORDS)) {
+      if (!HEDGE.test(clause.slice(0, m.index))) return m[0];
+    }
+  }
+  return null;
+}
 
 export function validateExplanation(result, post) {
   const errors = [];
@@ -49,19 +92,9 @@ export function validateExplanation(result, post) {
   const hasRecord = !!p && Array.isArray(p.actions);
 
   // --- Grounding: every citation must exist in the record ---
-  const isAiAction = (a) => !!a && AI_SOURCE_TYPES.includes(a.digitalSourceType);
   const aiActionCount = hasRecord ? p.actions.filter(isAiAction).length : 0;
-  let citesAiAction = false;
-  for (const f of cited_fields) {
-    const m = f.match(/^actions\[(\d+)\]$/);
-    if (!hasRecord) errors.push(`citation to ${f} but the post has no provenance record`);
-    else if (m) {
-      if (+m[1] >= p.actions.length) errors.push(`citation out of range: ${f} (record has ${p.actions.length} actions)`);
-      else if (isAiAction(p.actions[+m[1]])) citesAiAction = true;
-    } else if (!RECORD_FIELDS.includes(f) || p[f] === undefined) {
-      errors.push(`citation not in record: ${f}`);
-    }
-  }
+  const { errors: citationErrors, citesAiAction } = checkCitations(cited_fields, p);
+  errors.push(...citationErrors);
   if (what_ai_did.length > aiActionCount) {
     errors.push(`what_ai_did has ${what_ai_did.length} items but the record has ${aiActionCount} AI actions`);
   }
@@ -86,8 +119,50 @@ export function validateExplanation(result, post) {
 
   const userText = [["summary", summary], ...what_ai_did.map((s, i) => [`what_ai_did[${i}]`, s]), ...what_is_unknown.map((s, i) => [`what_is_unknown[${i}]`, s])];
   for (const [where, text] of userText) {
-    const bad = INTERNAL_TEXT.find((t) => text.includes(t));
+    const bad = internalText(text);
     if (bad) errors.push(`${where} contains internal text ("${bad}")`);
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
+/**
+ * Checks a follow-up answer. Pass { chip: "truth" } for the "Is this post true?"
+ * chip, whose answer must also explain that provenance is not a truth check.
+ */
+export function validateAnswer(result, post, { chip } = {}) {
+  const errors = [];
+  if (!result || typeof result !== "object" || Array.isArray(result)) {
+    return { ok: false, errors: ["result is not an object"] };
+  }
+
+  for (const k of ANSWER_KEYS) if (!(k in result)) errors.push(`missing field: ${k}`);
+  for (const k of Object.keys(result)) if (!ANSWER_KEYS.includes(k)) errors.push(`extra key: ${k}`);
+
+  const { answer, answerable, cited_fields, source } = result;
+  if (typeof answer !== "string" || answer.trim() === "") errors.push("answer must be a non-empty string");
+  else if (answer.length > MAX_ANSWER_LENGTH) errors.push(`answer too long (${answer.length} > ${MAX_ANSWER_LENGTH} chars)`);
+  if ("answerable" in result && typeof answerable !== "boolean") errors.push("answerable must be a boolean");
+  if ("cited_fields" in result && !isStringArray(cited_fields)) errors.push("cited_fields must be an array of strings");
+  if ("source" in result && source !== "mock" && source !== "llm") errors.push(`invalid source: ${JSON.stringify(source)}`);
+
+  if (errors.length) return { ok: false, errors };
+
+  errors.push(...checkCitations(cited_fields, post.provenance).errors);
+  if (answerable) {
+    if (!cited_fields.length) errors.push("an answerable answer needs at least one cited field");
+  } else {
+    if (cited_fields.length) errors.push("an unanswerable answer must not cite fields");
+    if (!NOT_IN_RECORD.test(answer)) errors.push("an unanswerable answer must say the record doesn't contain it");
+  }
+
+  const bad = internalText(answer);
+  if (bad) errors.push(`answer contains internal text ("${bad}")`);
+
+  const verdict = truthJudgment(answer);
+  if (verdict) errors.push(`answer judges the claim's truth ("${verdict}")`);
+  if (chip === "truth" && !PROVENANCE_NOT_TRUTH.test(answer)) {
+    errors.push("answer must say that provenance shows how the image was made, not whether the post is true");
   }
 
   return { ok: errors.length === 0, errors };
