@@ -79,6 +79,7 @@ const BAD = [
   ...["digitalCapture", "algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"].map((t) =>
     [`source type '${t}' in the answer`, "p2", { ...P2_ANSWER, answer: `The record lists ${t}.` }, {}, new RegExp(`answer contains internal text \\("${t}"\\)`)]),
   ["'label_level' in the answer", "p2", { ...P2_ANSWER, answer: "The label_level says Edited with AI." }, {}, /answer contains internal text \("label_level"\)/],
+  ["'label level' in the answer", "p2", { ...P2_ANSWER, answer: "Label level: Edited with AI." }, {}, /answer contains internal text \("label level"\)/],
   ["truth chip that doesn't separate provenance from truth", "p2", { ...P2_ANSWER, answer: "AI replaced the sky using Generative fill." }, { chip: "truth" }, /not whether the post is true/],
 ];
 for (const [name, id, result, opts, expected] of BAD) {
@@ -138,6 +139,8 @@ console.log("\nAI path (fake fetch):");
     "answer prompt lists exactly the citation names the validator accepts");
   check(/Never write source type names/.test(body.system) && /"created by AI"/.test(body.system),
     "answer prompt asks for plain words instead of source type names");
+  check(/the "Edited with AI" label/.test(body.system) && /Never write "label level"/.test(body.system),
+    "answer prompt asks for the label's name instead of \"label level\"");
 }
 {
   const seen = [];

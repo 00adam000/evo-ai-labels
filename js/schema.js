@@ -20,7 +20,8 @@ const AI_SOURCE_TYPES = ["algorithmicallyEnhanced", "compositeWithTrainedAlgorit
 // Field names or JSON in the shown text mean the model copied record internals
 // into prose meant for readers; citations belong in cited_fields only.
 const SOURCE_TYPES = ["digitalCapture", ...AI_SOURCE_TYPES];
-const INTERNAL_TEXT = ["actions[", "cited_fields", "label_level", "digitalSourceType", "{", ...SOURCE_TYPES];
+// "label level" is internal jargon; the reader should see the label's name.
+const INTERNAL_TEXT = ["actions[", "cited_fields", "label_level", "label level", "digitalSourceType", "{", ...SOURCE_TYPES];
 
 const ANSWER_KEYS = ["answer", "answerable", "cited_fields", "source"];
 const MAX_ANSWER_LENGTH = 400;
@@ -36,7 +37,8 @@ const PROVENANCE_NOT_TRUTH = /\bnot whether\b|(?:\b(?:not|cannot)\b|n['’]t\b)[
 
 const isStringArray = (v) => Array.isArray(v) && v.every((x) => typeof x === "string");
 const isAiAction = (a) => !!a && AI_SOURCE_TYPES.includes(a.digitalSourceType);
-const internalText = (text) => INTERNAL_TEXT.find((t) => text.includes(t));
+// Case-insensitive, so "Label level" at the start of a sentence is also caught.
+const internalText = (text) => INTERNAL_TEXT.find((t) => text.toLowerCase().includes(t.toLowerCase()));
 
 /** Checks that each cited field exists in the record; also reports whether any cited action is an AI action. */
 function checkCitations(cited, p) {

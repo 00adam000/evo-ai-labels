@@ -162,6 +162,8 @@ clearExplanationCache();
     "(g6) explanation prompt lists exactly the citation names the validator accepts");
   check(/Never write source type names/.test(body.system) && /"created by AI"/.test(body.system),
     "(g7) explanation prompt asks for plain words instead of source type names");
+  check(/the "Edited with AI" label/.test(body.system) && /Never write "label level"/.test(body.system),
+    "(g8) explanation prompt asks for the label's name instead of \"label level\"");
   const user = JSON.parse(body.messages[0].content);
   check(user.label_level === "AI-generated" && Object.keys(user).join() === "label_level,provenance",
     "(g5) user message holds only the label level and the record", Object.keys(user).join(", "));

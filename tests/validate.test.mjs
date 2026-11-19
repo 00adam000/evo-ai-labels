@@ -49,6 +49,7 @@ const BAD = [
   ["'{' in summary", "p3", () => ({ ...mock("p3"), summary: "This image was AI-generated {tool: Text-to-image model}." }), /summary contains internal text \("\{"\)/],
   ["citation to 'caption'", "p2", () => { const r = mock("p2"); r.cited_fields.push("caption"); return r; }, /citation not in record: caption/],
   ["'label_level' in summary", "p2", () => ({ ...mock("p2"), summary: "The label_level is Edited with AI." }), /summary contains internal text \("label_level"\)/],
+  ["'label level' in summary", "p2", () => ({ ...mock("p2"), summary: "The label level is Edited with AI." }), /summary contains internal text \("label level"\)/],
   ["'(trainedAlgorithmicMedia)' in what_ai_did", "p3", () => ({ ...mock("p3"), what_ai_did: ["Created the image with a text-to-image model (trainedAlgorithmicMedia)."] }), /what_ai_did\[0\] contains internal text \("trainedAlgorithmicMedia"\)/],
   ...["digitalCapture", "algorithmicallyEnhanced", "compositeWithTrainedAlgorithmicMedia", "trainedAlgorithmicMedia"].map((t) =>
     [`source type '${t}' in summary`, "p2", () => ({ ...mock("p2"), summary: `This image is ${t}.` }), new RegExp(`summary contains internal text \\("${t}"\\)`)]),
