@@ -1,11 +1,6 @@
 # Provenance Feed
 
-A prototype social-media feed with graded AI-involvement labels that expand into checked, plain-language explanations of each image's provenance.
-
-- **Live demo:** https://00adam000.github.io/evo-ai-labels/
-- *README prose word count: 901*
-
-Built for Assignment 2 of Intelligent Interactive Systems (University of Birmingham, 2026), extending my A1 literature review, *When "Made with AI" Misleads*.
+A fake social-media feed with graded AI-involvement labels that expand into checked, plain-language explanations of each image's provenance.
 
 ## Project status
 - **Implemented:**
@@ -78,13 +73,7 @@ Built for Assignment 2 of Intelligent Interactive Systems (University of Birming
 - "The record doesn't say" is a valid, checked answer, so the model has no reason to guess. "Is this post true?" must first say provenance shows how the image was made, not whether the caption is true.
 - *Checked:* `tests/answer.test.mjs` (58/58), including 16 bad answers rejected and 4 hedged ones accepted.
 
-### Stage 7: second live test (18 Nov 2026)
+### Stage 7: second live test
 - **Live failure:** the model cited `label_level`, which the validator didn't accept, so every AI explanation fell back. Fix: one shared list of citation names in `js/schema.js`, used by both prompts and the validator.
 - Suggested questions went missing after a fallback (likely a cached old `app.js`); the explanation now renders into its own container. Source type names like "trainedAlgorithmicMedia" in shown text are now rejected.
 - *Checked:* `validate` 43/43, `llm` 22/22, `answer` 69/69, `ui` 13/13 across every render path; reintroducing the old bug failed all 13 UI cases.
-
-## AI assistance
-<!-- TO BE WRITTEN BY THE AUTHOR -->
-
-## Additional files
-None. Report submitted separately on Canvas.
